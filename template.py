@@ -1,9 +1,6 @@
 import numpy as np
 import cv2
 
-im = cv2.imread('templates/sample.jpg',1)
-im1 = im.copy()
-
 templates = {
 	'ladder':cv2.imread('templates/ladder.png',1),
 	'key':cv2.imread('templates/key.png',1),
@@ -17,42 +14,71 @@ thresholds = {
 	'key':0.9,
 	'rope':0.9,
 	'sprite':0.8,
-	'gate':0.8,
+	'gate':0.85,
 }
 
-for t in ['sprite','gate','ladder','key','rope']:
+def find_locations(image):
 
-	res = cv2.matchTemplate(im,templates[t],cv2.TM_CCOEFF_NORMED)
-	
-	loc = np.where(res >= thresholds[t])
-	print (loc)
-	for pt in zip(*loc[::-1]):
-		print (pt,end=',')
-	h,w,_ = templates[t].shape[:]
+	im1 = im.copy()
 
-	if len(loc[0]) > 1:
+	list_of_locations = {
+		'sprite':None,
+		'gate':None,
+		'ladder':None,
+		'key':None,
+		'rope':None,
+	}
 
-		mid = (len(loc[0])+1)//2
-		pt = (loc[1][mid],loc[0][mid])
-		cv2.rectangle(im1, pt, (pt[0] + w, pt[1] + h), (0,255,255), 2)
+	for obj in ['sprite','gate','ladder','key','rope']:
 
-	elif len(loc[0]) == 1:
+		res = cv2.matchTemplate(im,templates[obj],cv2.TM_CCOEFF_NORMED)
+		loc = np.where(res >= thresholds[obj])
+		h,w,_ = templates[obj].shape[:]
 
-		pt = (loc[1][0],loc[0][0])
-		cv2.rectangle(im1, pt, (pt[0] + w, pt[1] + h), (0,255,255), 2)
+		if len(loc[0]) == 1:
 
-	print ('---',pt)
+			pt = (loc[1][0],loc[0][0])
+			cv2.rectangle(im1, pt, (pt[0] + w, pt[1] + h), (0,255,255), 2)
 
-c1 = cv2.copyMakeBorder(im,10,10,10,10,cv2.BORDER_CONSTANT,value=[255,255,255])
-c2 = cv2.copyMakeBorder(im1,10,10,10,10,cv2.BORDER_CONSTANT,value=[255,255,255])
+			list_of_locations[obj] = (pt[0] + w//2, pt[1] + h//2)
 
-both = np.hstack((c1,c2))
+		elif len(loc[0]) > 1:
 
-cv2.imshow('Templates',both)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
+			selected = []
 
-# cv2.imshow('image',im)
-# 
-# cv2.waitKey(0)
-# cv2.destroyAllWindows()
+			for frame in zip(*loc[::-1]):
+
+				found_nearby = False
+				
+				for sel in selected:
+					if abs(sel[0] - frame[0]) + abs(sel[1] - frame[1]) <= 20:
+						found_nearby = True
+						break
+
+				if found_nearby:
+					continue
+
+				selected.append(frame)
+
+				cv2.rectangle(im1, frame, (frame[0] + w, frame[1] + h), (0,255,255), 2)
+
+			if len(selected) == 1:
+				list_of_locations[obj] = (selected[0][0] + w//2, selected[0][1] + h//2)
+			else:
+				list_of_locations[obj] = [(sel[0] + w//2,sel[1] + h//2) for sel in selected]
+
+	#c1 = cv2.copyMakeBorder(im,10,10,10,10,cv2.BORDER_CONSTANT,value=[255,255,255])
+	#c2 = cv2.copyMakeBorder(im1,10,10,10,10,cv2.BORDER_CONSTANT,value=[255,255,255])
+
+	#both = np.hstack((c1,c2))
+
+	#cv2.imshow('Templates',im1)
+	#cv2.waitKey(0)
+	#cv2.destroyAllWindows()
+
+	print (list_of_locations)
+
+	return list_of_locations
+
+im = cv2.imread('templates/sample.jpg',1)
+find_locations(im)
