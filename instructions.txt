@@ -1,0 +1,60 @@
+Climb down the ladder,ladder
+Climb down the ladder,ladder
+Climb down the ladder,ladder
+Climb down the ladder,ladder
+Climb down the ladder,ladder
+Climb up the ladder,ladder
+Climb up the ladder,ladder
+Climb up the ladder,ladder
+Climb up the ladder,ladder
+Get the key,key
+Get the key,key
+Get the sword,sword
+Get the torch,torch
+Go between the lasers,laser
+Go between the lasers,laser
+Go between the lasers,laser
+Go between the lasers,laser
+Go to the bottom of the room,room
+Go to the bottom of the room,room
+Go to the bottom of the room,room
+Go to the bottom of the room,room
+Go to the bottom of the room,room
+Go to the bottom room,room
+Go to the bottom room,room
+Go to the bottom room,room
+Go to the center of the room,room
+Go to the center of the room,room
+Go to the center of the room,room
+Go to the center of the room,room
+Go to the center of the room,room
+Go to the center of the room,room
+Go to the center of the room,room
+Go to the center of the room,room
+Go to the center of the room,room
+Go to the center of the room,room
+Go to the center of the room,room
+Go to the center of the room,room
+Go to the left room,room
+Go to the left room,room
+Go to the left side of the room,room
+Go to the left side of the room,room
+Go to the left side of the room,room
+Go to the left side of the room,room
+Go to the right room,room
+Go to the right room,room
+Go to the right side of the room,room
+Go to the right side of the room,room
+Go to the right side of the room,room
+Go to the right side of the room,room
+Go to the top of the room,room
+Go to the top of the room,room
+Go to the top room,room
+Jump to the rope,rope
+Jump to the rope,rope
+Jump to the rope,rope
+Jump to the rope,rope
+Jump to the rope,rope
+Jump to the rope,rope
+Use the key,key
+Use the key,key

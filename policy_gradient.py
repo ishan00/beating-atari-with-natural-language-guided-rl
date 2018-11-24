@@ -9,7 +9,6 @@ import numpy as np
 import time
 import reward
 
-
 epi = 1000
 action_space = 18
 gamma = 0.95
