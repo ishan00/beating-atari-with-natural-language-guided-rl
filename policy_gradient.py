@@ -7,9 +7,11 @@ from torch.distributions import Categorical
 import gym
 import numpy as np
 import time
+import reward
+
 
 epi = 1000
-action_space = 6
+action_space = 18
 gamma = 0.95
 
 class ConvNet(nn.Module):
@@ -57,9 +59,7 @@ class ConvNet(nn.Module):
 		out = self.layer2(out)
 		out = self.layer3(out)
 		out = self.layer4(out)
-
 		out = out.view(out.size(0), -1)
-		
 		out = self.layer5(out)
 		out = self.layer6(out)
 		out = self.layer7(out)
@@ -91,9 +91,10 @@ for i in range(1,epi):
 
 def finish_episode():
 
-	t1 = time.time()
-
 	l = len(model.rewards) # Length of Episode
+
+	if l == 0:
+		return
 
 	model_rewards = np.array(model.rewards)
 	_rewards = disc[:l] * model_rewards
@@ -103,14 +104,10 @@ def finish_episode():
 	rewards = torch.tensor(rewards).float()
 	rewards = (rewards - rewards.mean()) / (rewards.std() + eps)
 
-	t2 = time.time()
-
 	policy_loss = []
 
 	for log_prob, reward in zip(model.saved_log_probs, rewards):
 		policy_loss.append(- log_prob * reward)
-	
-	t3 = time.time()
 
 	optimizer.zero_grad()
 	policy_loss = torch.cat(policy_loss).sum()
@@ -120,38 +117,55 @@ def finish_episode():
 	del model.rewards[:]
 	del model.saved_log_probs[:]
 
-	t4 = time.time()
-
 	print("Time %d\t%d\t%d"%(t2 - t1, t3 - t2, t4 - t3))
 
 
+RewardState = reward.RewardHistory()
+
 def main():
 	
-	env = gym.make('Riverraid-v0')
+	env = gym.make('MontezumaRevenge-v0')
 
 	for episode in range(1000):
+
+		t1 = time.time()
 
 		state = env.reset()
 		episode_reward = 0
 
+		info_prev = {'ale.lives':6}
+
+		if episode % 10 == 0 and episode != 0:
+
+			torch.save(model, 'saved/model_' + str(episode))
+			torch.save(model.state_dict(), 'saved/parameter_' + str(episode))
+
 		for t in range(epi):
-			if (t % 100 == 0): 
-				print(t)
+			
 			action = select_action(state)
-			state, reward, done, _ = env.step(action)
+
+			state, reward, done, info = env.step(action)
+			
+			reward = RewardState.reward(state, info, info_prev)
+			
 			episode_reward += reward
+
 			model.rewards.append(reward)
 
-			#env.render()
+			info_prev = info
+
+			#if episode % 20 == 0:
+			#	env.render()
+
+			if t % 100 == 0 and t != 0:
+				finish_episode()
 		
 			if done:
 				break
 
-		print ("----")
+		t2 = time.time()
 
-		finish_episode()
-
-		print('Episode %d\t Episode Reward: %f'%(episode, episode_reward))
+		print('Episode %d\t Episode Reward: %f\t Time: %f'%(episode, episode_reward, t2 - t1))
 
 	env.close()
 

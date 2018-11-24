@@ -1,141 +1,84 @@
 import numpy as np
-import readchar
-import gym
+import template
+'''
+1. going down the 1st ladder
+2. jumping on the rope
+3. going down the 2nd ladder
+4. going up the 3rd ladder
+5. fetching the key
+6. going down the 3rd ladder
+7. going up the 2nd ladder
+8. jumping on the rope
+9. going up the 1st ladder
+10. go to the right room
+'''
+
+def objects(dict):
+	return	{
+		'ladder1':dict['ladder'][0],
+		'ladder2':dict['ladder'][1],
+		'ladder3':dict['ladder'][2],
+		'gate1':dict['gate'][0],
+		'gate2':dict['gate'][1],
+		'key':dict['key'],
+		'rope':dict['rope'],
+	}
+
 
 class RewardHistory():
 
 	def __init__(self):
 
-		self.n_rewards = 21
-		self.rewards = np.ones(self.n_rewards, dtype = float) # Each of these rewards correspond to one natural language instruction
+		self.room = 1
+		self.n_rewards = 10
+		self.rewards = np.ones(self.n_rewards, dtype = float)
 
-		'''
-
-		Index	NLP Instruction
-
-		0		Climb down the ladder
-		1		Jump to the rope
-		2		Go to the right side of the room
-		3		Climb down the ladder
-		4		Go to the bottom of the room
-		5		Go to the center of the room
-		6		Go to the left side of the room
-		7		Climb up the ladder
-		8		Get the key
-		9		Climb down the ladder
-		10		Go to the bottom of the room
-		11		Go to the center of the room
-		12		Go to the right side of the room
-		13		Climb up the ladder
-		14		Jump to the rope
-		15		Go to the center of the room
-		16		Climb up the ladder
-		17		Go to the top of the room
-		18		Go to the right side of the room
-		19		Use the key
-		20		Go to the right room
+		self.object_locations = [(0, 0) for _ in range(self.n_rewards)]
 		
-		'''
+		object_locations = template.find_all_objects()
+		object_locations_named = objects(object_locations)
 
-	def reward(self):
+		self.object_locations[0] = object_locations_named['ladder1']
+		self.object_locations[1] = object_locations_named['rope']
+		self.object_locations[2] = object_locations_named['ladder2']
+		self.object_locations[3] = object_locations_named['ladder3']
+		self.object_locations[4] = object_locations_named['key']
+		self.object_locations[5] = object_locations_named['ladder3']
+		self.object_locations[6] = object_locations_named['ladder2']
+		self.object_locations[7] = object_locations_named['rope']
+		self.object_locations[8] = object_locations_named['ladder1']
+		self.object_locations[9] = object_locations_named['gate2']
 
+		print (self.object_locations)
 
+	def reward(self, frameRGB, info_curr, info_next):
 
+		# frame_number to be used later
 
+		sprite_pos = template.find_sprite(frameRGB)
 
+		print (sprite_pos)
 
+		reward = 0
 
+		if info_next['ale.lives'] < info_curr['ale.lives']:
+			reward -= 1
 
+		for i in range(self.n_rewards):
 
+			if self.rewards[i] == 0:
+				continue
 
+			center = self.object_locations[i]
 
+			if sprite_pos[0] <= center[0] and sprite_pos[0] + sprite_pos[2] >= center[0] and sprite_pos[1] <= center[1] and sprite_pos[1] + sprite_pos[3] >= center[1]:
 
+				reward = self.rewards[i]
+				self.rewards[i] = 0
+				break
 
-
-
-
-env = gym.make('MontezumaRevenge-v0')
-
-env.reset()
-
-# print (env.unwrapped.ale.getMinimalActionSet())
-# print (env.unwrapped.ale.lives())
-# print (env.unwrapped.ale.getScreenDims())
-# print (env.unwrapped.ale.getScreenRGB())
-# print (env.unwrapped.ale.getScreenGrayscale())
-# print (env.unwrapped.ale.saveScreenPNG('sample.jpg'))
-
-'''
-for _ in range(10):
-	
-	env.reset()
-
-	for _ in range(1000):
-
-		s,r,done,_ = env.step(env.action_space.sample())
-
-		if done == True:
-			break
-
-		env.render()
-
-'''
-'''
-quit = False
-
-last_action = 0
-
-for games in range(10):
-	
-	if quit:
-		break
-
-	env.reset()
-
-	for _ in range(1000):
-
-		char1 = readchar.readchar()
-		char2 = readchar.readchar()
-
-		action = last_action
-
-		if char1 == 'q':
-			quit = True
-			break
-		elif char1 == 'w' and char2 == 'w':
-			action = 2
-		elif char1 == 'a' and char2 == 'a':
-			action = 4
-		elif char1 == 's' and char2 == 's':
-			action = 5
-		elif char1 == 'd':
-			action = 3
-		elif char1 == ' ':
-			action = 1
-		elif (char1 == 'w' and char2 == 'd') or (char1 == 'd' and char2 == 'w'):
-			action = 11
-		elif (char1 == 'w' and char2 == 'a') or (char1 == 'a' and char2 == 'w'):
-			action = 12
+		return reward
 		
-
-		state,reward,done,info = env.step(action)
-
-		env.render()
-
-		last_action = action
-
-		print (info)
-'''
-
-
-
-
-
-
-
-
-
-
 
 
 
