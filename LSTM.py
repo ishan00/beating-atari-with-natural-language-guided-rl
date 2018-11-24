@@ -6,6 +6,8 @@ import torch.autograd as autograd
 import pickle
 import numpy as np
 import time
+import matplotlib.pyplot as plt
+import cv2
 
 torch.manual_seed(1)
 
@@ -215,7 +217,7 @@ def train():
 			torch.save(text_model, 'models/text_model_' + str(epoch+1))
 			torch.save(image_model, 'models/image_model_' + str(epoch+1))
 
-def test():
+def false_dataset():
 
 	#text_model = torch.load('models/text_model_50')
 	#image_model = torch.load('models/image_model_50')
@@ -225,8 +227,8 @@ def test():
 
 	dataset_false = []
 
-	for i in range(len(dataset)):
-		for j in range(len(dataset)):
+	for i in range(300):
+		for j in range(300):
 
 			if dataset[i][1] != dataset[j][1]:
 
@@ -238,8 +240,90 @@ def test():
 	with open('dataset_false.pickle','wb') as f:
 		pickle.dump(dataset_false,f)
 
-train()
+	test_dataset_false = []
+
+	for i in range(301, 347):
+		for j in range(301, 347):
+
+			if dataset[i][1] != dataset[j][1]:
+
+				test_dataset_false.append((dataset[i][0],dataset[j][1]))
+				test_dataset_false.append((dataset[j][0],dataset[i][1]))
+
+	print (len(test_dataset_false))
+
+	with open('test_dataset_false.pickle','wb') as f:
+		pickle.dump(test_dataset_false,f)
+
+
+def test():
+
+	text_model = torch.load('models/text_model_60')
+	image_model = torch.load('models/image_model_60')
+
+	# True labels
+
+	with open('dataset.pickle','rb') as f:
+		true_dataset = pickle.load(f)
+
+	items = np.random.randint(301, 347, 15)
+
+	iter = 1
+	for i in items:
+		(img1, img2), text = true_dataset[i]
+		# img1 = img1[:,:,::-1]
+		# img2 = img2[:,:,::-1]
+		enc_sentence = prepare_sentence(text, word_to_ix)
+		text_embed = text_model(enc_sentence)
+		stack = np.dstack((img1, img2))
+		frame_embed = image_model(stack)
+
+		dp = torch.dot(text_embed[0], frame_embed[0]) / (torch.norm(text_embed[0]) * torch.norm(frame_embed[0]))
+		print(dp)
+		
+		# both = np.hstack((img1, img2))
+		c1 = cv2.copyMakeBorder(img1,10,10,10,10,cv2.BORDER_CONSTANT,value=[255,255,255])
+		c2 = cv2.copyMakeBorder(img2,10,10,10,10,cv2.BORDER_CONSTANT,value=[255,255,255])
+
+		both = np.hstack((c1,c2))
+		cv2.imwrite('images/'+text+str(iter)+'_true' + str(dp.data)+ '.jpg', both)
+
+		iter += 1
+
+	with open('test_dataset_false.pickle','rb') as f:
+		false_dataset = pickle.load(f)
+
+	items = np.random.randint(0, 3384, 15)
+
+	iter = 1
+	for i in items:
+		(img1, img2), text = false_dataset[i]
+		# img1 = img1[:,:,::-1]
+		# img2 = img2[:,:,::-1]
+		enc_sentence = prepare_sentence(text, word_to_ix)
+		text_embed = text_model(enc_sentence)
+		stack = np.dstack((img1, img2))
+		frame_embed = image_model(stack)
+
+		dp = torch.dot(text_embed[0], frame_embed[0]) / (torch.norm(text_embed[0]) * torch.norm(frame_embed[0]))
+		print(dp)
+
+		# both = np.hstack((img1, img2))
+		c1 = cv2.copyMakeBorder(img1,10,10,10,10,cv2.BORDER_CONSTANT,value=[255,255,255])
+		c2 = cv2.copyMakeBorder(img2,10,10,10,10,cv2.BORDER_CONSTANT,value=[255,255,255])
+
+		both = np.hstack((c1,c2))
+		cv2.imwrite('images/'+text+str(iter)+'_false' + str(dp.data)+ '.jpg', both)
+
+		iter += 1
 
 
 
 
+	# False labels
+
+# train()
+
+# false_dataset()
+
+test()

@@ -244,8 +244,8 @@ def main():
 	
 	env = gym.make('MontezumaRevenge-v0')
 
-	text_model = torch.load('models/text_model_50')
-	image_model = torch.load('models/image_model_50')
+	text_model = torch.load('models/text_model_40')
+	image_model = torch.load('models/image_model_40')
 
 	with open('dataset.pickle','rb') as f:
 		dataset = pickle.load(f)
@@ -295,7 +295,7 @@ def main():
 
 			model.rewards.append(r)
 
-			env.render()
+			# env.render()
 
 			info = info_new
 			state = state_new
@@ -315,29 +315,3 @@ def main():
 	env.close()
 
 main()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
