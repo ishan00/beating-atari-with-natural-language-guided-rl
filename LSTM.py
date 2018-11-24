@@ -40,11 +40,6 @@ def prepare_sentence(sent, to_ix):
 	idxs = [to_ix[w] for w in sent]
 	return torch.tensor(idxs, dtype=torch.long)
 
-EMBEDDING_DIM = 10
-HIDDEN_DIM = 5
-VOCAB_SIZE = len(word_to_ix)
-LABEL_SIZE = len(label_to_ix)
-
 class LSTMClassifier(nn.Module):
 
 	def __init__(self):
@@ -68,11 +63,78 @@ class LSTMClassifier(nn.Module):
 		x = embeds.view(len(sentence), 1, -1)
 		lstm_out, self.hidden = self.lstm(x, self.hidden)
 		y  = self.fullyconnected(lstm_out[-1])
-		log_probs = F.log_softmax(y)
-		return log_probs
+		#log_probs = F.log_softmax(y)
+		return y
 
-model = LSTMClassifier()
-loss_function = nn.NLLLoss()
+class ConvNetClassifier(nn.Module):
+
+	def __init__(self):
+		
+		super(ConvNet, self).__init__()
+
+		self.layer1 = nn.Sequential(
+				nn.Conv2d(6, 32, kernel_size = 5, stride = 1, padding = 2),
+				nn.ReLU(),
+				nn.MaxPool2d(kernel_size = 2, stride = 2)
+			)
+
+		self.layer2 = nn.Sequential(
+				nn.Conv2d(32, 32, kernel_size = 5, stride = 1, padding = 2),
+				nn.ReLU(),
+				nn.MaxPool2d(kernel_size = 2, stride = 2)
+			)
+
+		self.layer3 = nn.Sequential(
+				nn.Conv2d(32, 64, kernel_size = 4, stride = 1, padding = 2),
+				nn.ReLU(),
+				nn.MaxPool2d(kernel_size = 2, stride = 2)
+			)
+
+		self.layer4 = nn.Sequential(
+				nn.Conv2d(64, 64, kernel_size = 3, stride = 1, padding = 1)
+			)
+
+		self.layer5 = nn.Linear(2*26*20*64 , 10)
+
+		self.layer6 = nn.PReLU()
+
+		self.layer7 = nn.Linear(10, 10)
+
+	def forward(self, x):
+
+		out = self.layer1(x)
+		out = self.layer2(out)
+		out = self.layer3(out)
+		out = self.layer4(out)
+		out = out.view(out.size(0), -1)
+		out = self.layer5(out)
+		out = self.layer6(out)
+		out = self.layer7(out)
+		
+		return out
+
+'''
+class CustomLoss():
+
+	def forward(self, output_of_lstm, output_of_conv_net):
+
+		print (output_of_lstm)
+		print (output_of_conv_net)
+
+		loss = 1.0 - torch.dot(output_of_lstm, output_of_conv_net) / max(torch.norm(output_of_lstm) * torch.norm(output_of_conv_net))
+
+	def backward():
+'''
+
+EMBEDDING_DIM = 20
+HIDDEN_DIM = 10
+VOCAB_SIZE = len(word_to_ix)
+LABEL_SIZE = len(label_to_ix)
+
+
+text_model = LSTMClassifier()
+image_model = ConvNetClassifier()
+loss_function = nn.MSELoss()
 optimizer = optim.SGD(model.parameters(), lr = 0.1)
 
 def train():
@@ -81,17 +143,21 @@ def train():
 
 		total_loss = 0.0
 
-		for sentence,label in instructions:
+		for sentence,frame in instructions:
 
-			model.hidden = model.init_hidden()
-			model.zero_grad()
+			text_model.hidden = model.init_hidden()
+			
+			text_model.zero_grad()
+			image_model.zero_grad()
 
 			enc_sentence = prepare_sentence(sentence, word_to_ix)
-			enc_label = prepare_sentence(label, label_to_ix)
+			#enc_label = prepare_sentence(label, label_to_ix)
 			
-			tag_scores = model(enc_sentence)
+			text_embed = text_model(enc_sentence)
 
-			loss = loss_function(tag_scores, enc_label)
+			frame_embed = image_model(frame)
+
+			loss = loss_function(text_embed, frame_embed)
 
 			total_loss += loss.item()
 

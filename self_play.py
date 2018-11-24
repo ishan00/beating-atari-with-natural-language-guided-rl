@@ -3,6 +3,8 @@ import numpy as np
 from readchar import readchar
 from reward import RewardHistory
 import pickle
+import cv2
+
 '''
 Moves
 0 - NOP
@@ -61,7 +63,7 @@ def main():
 
 		state, reward, done, info = env.step(action)
 
-		with open('sprite_' + str(i) + '.pickle','wb') as f:
+		with open('saved/sprite_' + str(i) + '.pickle','wb') as f:
 			pickle.dump(state,f)
 
 		current_reward = rewards.reward(state, info, prev_info)
@@ -78,4 +80,7 @@ def main():
 
 	env.close()
 
-main()
+
+
+
+#main()
