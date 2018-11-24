@@ -1,3 +1,7 @@
+import pickle
+import numpy as np
+import cv2
+
 list_of_instructions = [
 	'Climb down the ladder',			#0
 	'Climb up the ladder',				#1
@@ -61,3 +65,54 @@ def label_images():
 		pickle.dump(dataset,f)
 
 #label_images()
+
+def combine():
+
+	f1 = open('dataset1.pickle','rb')
+	f2 = open('dataset2.pickle','rb')
+	f3 = open('dataset3.pickle','rb')
+	f5 = open('dataset7.pickle','rb')
+	f6 = open('dataset8.pickle','rb')
+	f7 = open('dataset9.pickle','rb')
+
+	l1 = pickle.load(f1)
+	l2 = pickle.load(f2)
+	l3 = pickle.load(f3)
+	l5 = pickle.load(f5)
+	l6 = pickle.load(f6)
+	l7 = pickle.load(f7)
+
+	print (len(l1))
+	print (len(l2))
+	print (len(l3))
+	print (len(l5))
+	print (len(l6))
+	print (len(l7))
+
+	l = l1 + l2 + l3 + l5 + l6 + l7
+
+	with open('dataset.pickle','wb') as f:
+		pickle.dump(l,f)
+
+#combine()
+with open('dataset.pickle','rb') as f:
+	l = pickle.load(f)
+
+for i in range(0,200,20):
+
+	(f1,f2), sent = l[i]
+
+	both = np.hstack((f1, f2))
+
+	print (sent)
+
+	cv2.imshow('image' + str(i),both)
+	cv2.waitKey()
+
+
+
+
+
+
+
+

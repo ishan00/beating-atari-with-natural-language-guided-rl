@@ -3,6 +3,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import torch.autograd as autograd
+import pickle
+import numpy as np
+import time
 
 torch.manual_seed(1)
 
@@ -37,6 +40,7 @@ print(word_to_ix)
 print(label_to_ix)
 
 def prepare_sentence(sent, to_ix):
+	sent = sent.lower().strip().split(' ')
 	idxs = [to_ix[w] for w in sent]
 	return torch.tensor(idxs, dtype=torch.long)
 
@@ -47,30 +51,32 @@ class LSTMClassifier(nn.Module):
 		super(LSTMClassifier, self).__init__()
 
 		self.embeddings = nn.Embedding(VOCAB_SIZE, EMBEDDING_DIM)
-		self.lstm = nn.LSTM(EMBEDDING_DIM, HIDDEN_DIM)
-		self.fullyconnected = nn.Linear(HIDDEN_DIM, LABEL_SIZE)
+		self.lstm = nn.LSTM(EMBEDDING_DIM, HIDDEN_DIM_LSTM)
+		self.fullyconnected = nn.Linear(HIDDEN_DIM_LSTM, 10)
 		self.hidden = self.init_hidden()
 
 	def init_hidden(self):
 		# the first is the hidden h
 		# the second is the cell  c
-		return (autograd.Variable(torch.zeros(1, 1, HIDDEN_DIM)),
-                autograd.Variable(torch.zeros(1, 1, HIDDEN_DIM)))
+		return (autograd.Variable(torch.zeros(1, 1, HIDDEN_DIM_LSTM)),
+                autograd.Variable(torch.zeros(1, 1, HIDDEN_DIM_LSTM)))
 
 	def forward(self, sentence):
 
 		embeds = self.embeddings(sentence)
 		x = embeds.view(len(sentence), 1, -1)
 		lstm_out, self.hidden = self.lstm(x, self.hidden)
+		#print (lstm_out)
 		y  = self.fullyconnected(lstm_out[-1])
-		#log_probs = F.log_softmax(y)
+		# log_probs = F.log_softmax(y)
+		#print (y)
 		return y
 
 class ConvNetClassifier(nn.Module):
 
 	def __init__(self):
 		
-		super(ConvNet, self).__init__()
+		super(ConvNetClassifier, self).__init__()
 
 		self.layer1 = nn.Sequential(
 				nn.Conv2d(6, 32, kernel_size = 5, stride = 1, padding = 2),
@@ -94,13 +100,18 @@ class ConvNetClassifier(nn.Module):
 				nn.Conv2d(64, 64, kernel_size = 3, stride = 1, padding = 1)
 			)
 
-		self.layer5 = nn.Linear(2*26*20*64 , 10)
+		self.layer5 = nn.Linear(26*20*64 , 10)
 
 		self.layer6 = nn.PReLU()
 
 		self.layer7 = nn.Linear(10, 10)
 
 	def forward(self, x):
+
+		x = np.swapaxes(x,0,2)
+		x = np.swapaxes(x,1,2)
+
+		x = autograd.Variable(torch.from_numpy(x).unsqueeze(0).float())
 
 		out = self.layer1(x)
 		out = self.layer2(out)
@@ -110,60 +121,125 @@ class ConvNetClassifier(nn.Module):
 		out = self.layer5(out)
 		out = self.layer6(out)
 		out = self.layer7(out)
+		#print (out)
 		
 		return out
 
-'''
-class CustomLoss():
-
-	def forward(self, output_of_lstm, output_of_conv_net):
-
-		print (output_of_lstm)
-		print (output_of_conv_net)
-
-		loss = 1.0 - torch.dot(output_of_lstm, output_of_conv_net) / max(torch.norm(output_of_lstm) * torch.norm(output_of_conv_net))
-
-	def backward():
-'''
-
 EMBEDDING_DIM = 20
-HIDDEN_DIM = 10
+HIDDEN_DIM_LSTM = 10
 VOCAB_SIZE = len(word_to_ix)
 LABEL_SIZE = len(label_to_ix)
 
-
 text_model = LSTMClassifier()
 image_model = ConvNetClassifier()
-loss_function = nn.MSELoss()
-optimizer = optim.SGD(model.parameters(), lr = 0.1)
+loss_function = nn.CosineEmbeddingLoss()
+optimizer1 = optim.SGD(text_model.parameters(), lr = 0.001)
+optimizer2 = optim.SGD(image_model.parameters(), lr = 0.001)
 
 def train():
 
-	for epoch in range(300):
+	with open('dataset.pickle','rb') as f:
+
+		dataset = pickle.load(f)
+
+	with open('dataset_false.pickle','rb') as g:
+		dataset_false = pickle.load(g)
+
+	for epoch in range(100):
+
+		t1 = time.time()
 
 		total_loss = 0.0
 
-		for sentence,frame in instructions:
+		for (frame1,frame2), sentence in dataset[:300]:
 
-			text_model.hidden = model.init_hidden()
+			text_model.hidden = text_model.init_hidden()
 			
 			text_model.zero_grad()
 			image_model.zero_grad()
 
 			enc_sentence = prepare_sentence(sentence, word_to_ix)
-			#enc_label = prepare_sentence(label, label_to_ix)
-			
+
 			text_embed = text_model(enc_sentence)
 
-			frame_embed = image_model(frame)
+			stack = np.dstack((frame1,frame2))
 
-			loss = loss_function(text_embed, frame_embed)
+			frame_embed = image_model(stack)
+
+			loss = loss_function(text_embed, frame_embed,torch.tensor([1]).float())
 
 			total_loss += loss.item()
 
 			loss.backward()
-			optimizer.step()
 
-		print("epoch %d loss %f"%(epoch,total_loss))
+			torch.nn.utils.clip_grad_norm(text_model.parameters(),1)
+			torch.nn.utils.clip_grad_norm(image_model.parameters(),1)
+
+			optimizer1.step()
+			optimizer2.step()
+
+			ind = np.random.randint(0,10000,5)
+
+			for j in ind:
+
+				text_model.hidden = text_model.init_hidden()
+			
+				text_model.zero_grad()
+				image_model.zero_grad()
+
+				enc_sentence = prepare_sentence(dataset_false[j][1], word_to_ix)
+
+				text_embed = text_model(enc_sentence)
+
+				stack = np.dstack(dataset_false[j][0])
+
+				frame_embed = image_model(stack)
+
+				loss = loss_function(text_embed, frame_embed,torch.tensor([-1]).float())
+
+				total_loss += loss.item()
+
+				loss.backward()
+
+				torch.nn.utils.clip_grad_norm(text_model.parameters(),1)
+				torch.nn.utils.clip_grad_norm(image_model.parameters(),1)
+
+				optimizer1.step()
+				optimizer2.step()
+
+		t2 = time.time()
+
+		print("epoch %d loss %f time %f"%(epoch,total_loss,t2-t1))
+
+		if (epoch+1) % 20 == 0:
+			torch.save(text_model, 'models/text_model_' + str(epoch+1))
+			torch.save(image_model, 'models/image_model_' + str(epoch+1))
+
+def test():
+
+	#text_model = torch.load('models/text_model_50')
+	#image_model = torch.load('models/image_model_50')
+
+	with open('dataset.pickle','rb') as f:
+		dataset = pickle.load(f)
+
+	dataset_false = []
+
+	for i in range(len(dataset)):
+		for j in range(len(dataset)):
+
+			if dataset[i][1] != dataset[j][1]:
+
+				dataset_false.append((dataset[i][0],dataset[j][1]))
+				dataset_false.append((dataset[j][0],dataset[i][1]))
+
+	print (len(dataset_false))
+
+	with open('dataset_false.pickle','wb') as f:
+		pickle.dump(dataset_false,f)
 
 train()
+
+
+
+
