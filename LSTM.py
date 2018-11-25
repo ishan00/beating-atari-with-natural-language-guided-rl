@@ -140,11 +140,11 @@ optimizer2 = optim.SGD(image_model.parameters(), lr = 0.001)
 
 def train():
 
-	with open('dataset.pickle','rb') as f:
+	with open('dataset/dataset_true.pickle','rb') as f:
 
 		dataset = pickle.load(f)
 
-	with open('dataset_false.pickle','rb') as g:
+	with open('dataset/dataset_false.pickle','rb') as g:
 		dataset_false = pickle.load(g)
 
 	for epoch in range(100):
@@ -214,15 +214,15 @@ def train():
 		print("epoch %d loss %f time %f"%(epoch,total_loss,t2-t1))
 
 		if (epoch+1) % 20 == 0:
-			torch.save(text_model, 'models/text_model_' + str(epoch+1))
-			torch.save(image_model, 'models/image_model_' + str(epoch+1))
+			torch.save(text_model, 'models/sentence/text_model_' + str(epoch+1))
+			torch.save(image_model, 'models/image/image_model_' + str(epoch+1))
 
 def false_dataset():
 
 	#text_model = torch.load('models/text_model_50')
 	#image_model = torch.load('models/image_model_50')
 
-	with open('dataset.pickle','rb') as f:
+	with open('dataset/dataset_true.pickle','rb') as f:
 		dataset = pickle.load(f)
 
 	dataset_false = []
@@ -237,7 +237,7 @@ def false_dataset():
 
 	print (len(dataset_false))
 
-	with open('dataset_false.pickle','wb') as f:
+	with open('dataset/dataset_false.pickle','wb') as f:
 		pickle.dump(dataset_false,f)
 
 	test_dataset_false = []
@@ -252,9 +252,10 @@ def false_dataset():
 
 	print (len(test_dataset_false))
 
-	with open('test_dataset_false.pickle','wb') as f:
+	'''
+	with open('dataset/dataset_false.pickle','wb') as f:
 		pickle.dump(test_dataset_false,f)
-
+	'''
 
 def test():
 

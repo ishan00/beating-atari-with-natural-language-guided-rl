@@ -244,11 +244,11 @@ def main():
 	
 	env = gym.make('MontezumaRevenge-v0')
 
-	text_model = torch.load('models/text_model_40')
-	image_model = torch.load('models/image_model_40')
-	model = torch.load('models/model_99')
+	text_model = torch.load('models/sentence/text_model_40')
+	image_model = torch.load('models/image/image_model_40')
+	model = torch.load('models/policy/model_100')
 
-	with open('dataset.pickle','rb') as f:
+	with open('dataset/dataset_true.pickle','rb') as f:
 		dataset = pickle.load(f)
 
 	with open('first_room.txt','r') as f:
