@@ -34,3 +34,17 @@ In order to use these datasets for visualization you need to have `pickle`. Once
 with open('dataset/dataset_true.pickle','rb') as file:
 	dataset_true = pickle.load(file)
 ```
+
+### Experiments
+
+We trained the Bimodel Embedding network as mentioned in the paper. Here are few results of similarity between frame pairs and sentences.
+
+| Consecutive Frames | Sentence | Dot Product |
+|--------------------|----------|-------------|
+|![](images/img1.jpg)| Climb up the ladder | <p style="color:green">0.9527</p> |
+|![](images/img2.jpg)| Jump to the rope | <p style="color:green">0.8666</p> |
+|![](images/img3.jpg)| Go to the right room | <p style="color:green">0.9167</p> |
+|![](images/img4.jpg)| Climb up the ladder | <p style="color:red">0.1860</p> |
+|![](images/img5.jpg)| Go to the center of the room | <p style="color:red">-0.1225</p> |
+
+There were a lot of other frames in which the model showed false positives. The major reason was that the dataset we had was really small (only 400 true tuples)
