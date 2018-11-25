@@ -246,6 +246,7 @@ def main():
 
 	text_model = torch.load('models/text_model_40')
 	image_model = torch.load('models/image_model_40')
+	model = torch.load('models/model_99')
 
 	with open('dataset.pickle','rb') as f:
 		dataset = pickle.load(f)
@@ -266,10 +267,10 @@ def main():
 
 		info = {'ale.lives':6}
 
-		if episode % 10 == 0 and episode != 0:
+		#if episode % 10 == 0 and episode != 0:
 
-			torch.save(model, 'saved/model_' + str(episode))
-			torch.save(model.state_dict(), 'saved/parameter_' + str(episode))
+		#	torch.save(model, 'saved/model_' + str(episode))
+		#	torch.save(model.state_dict(), 'saved/parameter_' + str(episode))
 
 		for t in range(epi):
 			
@@ -289,21 +290,21 @@ def main():
 			
 			r = reward.item()
 
-			print (r)
+			#print (r)
 
 			if r < 0.9: r = 0
 
 			model.rewards.append(r)
 
-			# env.render()
+			env.render()
 
 			info = info_new
 			state = state_new
 			#if episode % 20 == 0:
 			#	env.render()
 
-			if (t+1) % 40 == 0:
-				finish_episode()
+			#if (t+1) % 40 == 0:
+			#	finish_episode()
 		
 			if done:
 				break
