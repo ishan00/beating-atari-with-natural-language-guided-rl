@@ -271,8 +271,9 @@ def test():
 	iter = 1
 	for i in items:
 		(img1, img2), text = true_dataset[i]
-		# img1 = img1[:,:,::-1]
-		# img2 = img2[:,:,::-1]
+		#img1 = img1[:,:,::-1]
+		#img2 = img2[:,:,::-1]
+		'''
 		enc_sentence = prepare_sentence(text, word_to_ix)
 		text_embed = text_model(enc_sentence)
 		stack = np.dstack((img1, img2))
@@ -280,16 +281,16 @@ def test():
 
 		dp = torch.dot(text_embed[0], frame_embed[0]) / (torch.norm(text_embed[0]) * torch.norm(frame_embed[0]))
 		print(dp)
-		
-		# both = np.hstack((img1, img2))
+		'''
+		#both = np.hstack((img1, img2))
 		c1 = cv2.copyMakeBorder(img1,10,10,10,10,cv2.BORDER_CONSTANT,value=[255,255,255])
 		c2 = cv2.copyMakeBorder(img2,10,10,10,10,cv2.BORDER_CONSTANT,value=[255,255,255])
 
 		both = np.hstack((c1,c2))
-		cv2.imwrite('images/'+text+str(iter)+'_true' + str(dp.data)+ '.jpg', both)
-
-		iter += 1
-
+		print (text)
+		cv2.imshow('sample', both)
+		cv2.waitKey(0)
+	'''
 	with open('test_dataset_false.pickle','rb') as f:
 		false_dataset = pickle.load(f)
 
@@ -317,7 +318,7 @@ def test():
 
 		iter += 1
 
-
+	'''
 
 
 	# False labels
